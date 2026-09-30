@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "search-config",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["titles", "locations"],
+  "properties": {
+    "titles": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "keywords": { "type": "array", "items": { "type": "string" } },
+    "locations": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "score"],
+        "properties": {
+          "key": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "label": { "type": "string", "minLength": 1 },
+          "match": { "type": "string" },
+          "score": { "type": "integer", "minimum": 0, "maximum": 10 }
+        }
+      }
+    },
+    "seniority": { "type": "array", "items": { "type": "string" } },
+    "dealbreakers": { "type": "array", "items": { "type": "string" } },
+    "companies_watch": { "type": "array", "items": { "type": "string" } },
+    "sources": {
+      "type": "object",
+      "properties": {
+        "greenhouse": { "type": "boolean" },
+        "lever": { "type": "boolean" },
+        "ashby": { "type": "boolean" },
+        "workday": { "type": "boolean" },
+        "google_jobs": { "type": "boolean" },
+        "indeed": { "type": "boolean" },
+        "builtin_nyc": { "type": "boolean" },
+        "wellfound": { "type": "boolean" },
+        "hn_whoishiring": { "type": "boolean" }
+      }
+    },
+    "manual_feeds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "url"],
+        "properties": {
+          "label": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      }
+    }
+  }
+}

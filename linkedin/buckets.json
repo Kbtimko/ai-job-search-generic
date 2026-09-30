@@ -1,0 +1,22 @@
+{
+  "_comment": "Title-bucket keyword definitions. Checked in order; first match wins. Revise these without touching code.",
+  "buckets": [
+    {"key": "current_archetype",
+     "patterns": ["senior manager, analytics", "senior manager analytics",
+                  "manager, analytics", "analytics manager",
+                  "business intelligence manager"]},
+    {"key": "head_of_data",
+     "patterns": ["head of data", "head of analytics", "head of insights"]},
+    {"key": "director_plus_analytics",
+     "patterns": ["director of analytics", "director, analytics", "director of data",
+                  "director, data", "senior director", "vp of analytics",
+                  "vp, analytics", "vice president, analytics"]},
+    {"key": "analytical_product",
+     "patterns": ["product manager", "data product", "analytical product",
+                  "product lead", "data pm"]},
+    {"key": "bizops_finance",
+     "patterns": ["business operations", "bizops", "strategic finance",
+                  "strategy and operations", "strategy & operations", "fp&a"]}
+  ],
+  "default": "other"
+}

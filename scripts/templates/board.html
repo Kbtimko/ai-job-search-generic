@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<details style="margin-bottom:16px">
+  <summary style="cursor:pointer; font-weight:600">＋ New application</summary>
+  <form method="post" action="{{ url_for('new') }}" style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+    <input name="company" placeholder="Company" required>
+    <input name="title" placeholder="Title">
+    <select name="stage">
+      {% for s in stage_columns %}<option value="{{ s }}">{{ s|capitalize }}</option>{% endfor %}
+    </select>
+    <button type="submit">Add</button>
+  </form>
+</details>
+<div class="board">
+  {% for stage in stage_columns %}
+  <div class="col">
+    <h3>{{ stage|capitalize }} · {{ columns[stage]|length }}</h3>
+    {% for app in columns[stage] %}
+      {% include "_card.html" %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% set terminal_total = terminal.values() | map('length') | sum %}
+{% if terminal_total > 0 %}
+<details style="margin-top:16px">
+  <summary style="cursor:pointer; font-weight:600">Closed · {{ terminal_total }}</summary>
+  <div class="board" style="margin-top:10px">
+    {% for stage in terminal_columns %}
+    <div class="col">
+      <h3>{{ stage|capitalize }} · {{ terminal[stage]|length }}</h3>
+      {% for app in terminal[stage] %}{% include "_card.html" %}{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+{% endblock %}

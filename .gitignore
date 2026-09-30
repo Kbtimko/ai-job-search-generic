@@ -1,0 +1,25 @@
+# Personal job-search data — never commit
+data/*
+!data/jobs.json
+!data/applications.json
+!data/pipeline-state.json
+profile/*
+!profile/README.md
+!profile/master.json
+!profile/master.example.json
+output/
+
+# Brainstorming visual-companion artifacts
+.superpowers/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.vercel
+.env*

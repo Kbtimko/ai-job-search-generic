@@ -1,0 +1,45 @@
+<div class="card">
+  <h4>{{ app.company }}</h4>
+  <div class="meta">{{ app.title }} · {{ app._age }}d</div>
+  {% if app._job_url %}<div class="meta"><a href="{{ app._job_url }}" target="_blank" rel="noopener">Job description ↗</a></div>{% endif %}
+  {% if app.next_action %}<div class="badge">▶ {{ app.next_action }}{% if app.due_date %} (due {{ app.due_date }}){% endif %}</div>{% endif %}
+  {% if app.notes %}<div class="meta" style="margin-top:6px">📝 {{ app.notes }}</div>{% endif %}
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+    {% if app._next_stage %}
+    <form class="inline" method="post" action="{{ url_for('advance') }}">
+      <input type="hidden" name="key" value="{{ app._key }}">
+      <input type="hidden" name="stage" value="{{ app._next_stage }}">
+      <button type="submit">Advance ▸ {{ app._next_stage|capitalize }}</button>
+    </form>
+    {% endif %}
+    {% if app._can_undo %}
+    <form class="inline" method="post" action="{{ url_for('undo') }}">
+      <input type="hidden" name="key" value="{{ app._key }}">
+      <button type="submit">Undo ↶</button>
+    </form>
+    {% endif %}
+    {% if app._is_open %}
+    <form class="inline" method="post" action="{{ url_for('advance') }}">
+      <input type="hidden" name="key" value="{{ app._key }}">
+      <input type="hidden" name="stage" value="rejected">
+      <button type="submit">Reject</button>
+    </form>
+    <form class="inline" method="post" action="{{ url_for('advance') }}">
+      <input type="hidden" name="key" value="{{ app._key }}">
+      <input type="hidden" name="stage" value="withdrawn">
+      <button type="submit">Withdraw ✕</button>
+    </form>
+    {% endif %}
+  </div>
+  <details style="margin-top:8px">
+    <summary style="font-size:12px; cursor:pointer; color:#557">⋯ edit</summary>
+    <form method="post" action="{{ url_for('edit') }}" style="margin-top:6px">
+      <input type="hidden" name="key" value="{{ app._key }}">
+      <input name="next_action" placeholder="next action" value="{{ app.next_action or '' }}"
+             style="width:100%; margin-bottom:4px">
+      <input name="due_date" type="date" value="{{ app.due_date or '' }}" style="margin-bottom:4px">
+      <textarea name="notes" placeholder="notes" style="width:100%; margin-bottom:4px">{{ app.notes or '' }}</textarea>
+      <button type="submit">Save</button>
+    </form>
+  </details>
+</div>

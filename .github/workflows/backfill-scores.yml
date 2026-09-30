@@ -1,0 +1,82 @@
+name: Backfill Job Scores (one-off)
+
+# Manual-only. Regrades already-found jobs in data/jobs.json under the CURRENT
+# search-config criteria by re-scoring the three subjective sub-scores from each
+# job's stored text (no web tools, so no search fees / pause_turn regrowth).
+# Defaults to a DRY RUN: it prints the before→after diff to this log and commits
+# nothing. Set `write=true` to persist + commit the regraded scores to main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: "Persist + commit results? (false = dry run, just print the diff)"
+        type: boolean
+        default: false
+      batch_size:
+        description: "Jobs per API call"
+        default: "8"
+      limit:
+        description: "Only score the first N active jobs (blank = all)"
+        default: ""
+      model:
+        description: "JOBSEARCH_MODEL"
+        default: "claude-sonnet-4-6"
+      effort:
+        description: "JOBSEARCH_EFFORT (low/high)"
+        default: "low"
+      max_tokens:
+        description: "JOBSEARCH_MAX_TOKENS (output cap per call)"
+        default: "6000"
+
+permissions:
+  contents: write           # to commit the regraded data/jobs.json
+
+concurrency:
+  group: daily-scan         # share the scan's group so neither clobbers jobs.json
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      JOBSEARCH_MODEL: ${{ inputs.model || 'claude-sonnet-4-6' }}
+      JOBSEARCH_EFFORT: ${{ inputs.effort || 'low' }}
+      JOBSEARCH_MAX_TOKENS: ${{ inputs.max_tokens || '6000' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run backfill
+        # Inputs are passed via env (not interpolated into the shell) to avoid injection.
+        env:
+          BATCH_SIZE: ${{ inputs.batch_size || '8' }}
+          LIMIT: ${{ inputs.limit }}
+          WRITE: ${{ inputs.write }}
+        run: |
+          ARGS=(--batch-size "$BATCH_SIZE")
+          if [[ -n "$LIMIT" ]]; then ARGS+=(--limit "$LIMIT"); fi
+          if [[ "$WRITE" == "true" ]]; then ARGS+=(--write); fi
+          echo "Running: python -m scripts.backfill_scores ${ARGS[*]}"
+          PYTHONPATH=. python -m scripts.backfill_scores "${ARGS[@]}"
+      - name: Commit regraded scores
+        if: ${{ inputs.write == true }}
+        run: |
+          if [[ -n "$(git status --porcelain data/jobs.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/jobs.json
+            git commit -m "chore(data): backfill regrade active jobs under retargeted criteria [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push && exit 0
+              echo "push attempt $i failed, retrying..." >&2
+              sleep 5
+            done
+            echo "push failed after 3 retries" >&2; exit 1
+          else
+            echo "No score changes to commit."
+          fi

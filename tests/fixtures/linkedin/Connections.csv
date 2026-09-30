@@ -1,0 +1,9 @@
+Notes:
+"When exporting your connection data, you may notice that some of the email addresses are missing."
+
+First Name,Last Name,URL,Email Address,Company,Position,Connected On
+Ada,Nolan,https://www.linkedin.com/in/adanolan,,Northwind Traders,Director of Analytics,10 Jun 2019
+Bo,Reyes,https://www.linkedin.com/in/boreyes,bo@example.com,"Contoso, Inc.",Senior Data Analyst,22 Mar 2019
+Cy,Marsh,https://www.linkedin.com/in/cymarsh,,Fabrikam LLC,VP of Engineering,05 Jun 2021
+Dee,Okafor,https://www.linkedin.com/in/deeokafor,,Northwind Traders,Engineering Manager,14 Sep 2024
+Eli,Prasad,https://www.linkedin.com/in/eliprasad,,Initech,Software Engineer,01 Feb 2011

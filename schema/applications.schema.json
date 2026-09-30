@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "applications",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": true,
+    "required": ["company", "stage"],
+    "properties": {
+      "job_id": { "type": ["string", "null"] },
+      "company": { "type": "string", "minLength": 1 },
+      "title": { "type": "string" },
+      "applied_date": { "type": ["string", "null"], "format": "date" },
+      "stage": { "type": "string", "enum": ["draft", "applied", "screening", "interview", "offer", "rejected", "withdrawn"] },
+      "next_action": { "type": "string" },
+      "due_date": { "type": ["string", "null"], "format": "date" },
+      "notes": { "type": "string" },
+      "artifacts_path": { "type": "string" },
+      "stage_history": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["stage", "date", "source"],
+          "properties": {
+            "stage": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "source": { "type": "string", "enum": ["manual", "tailor", "gmail"] },
+            "evidence": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

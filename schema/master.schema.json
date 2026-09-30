@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "master",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["basics", "experience"],
+  "properties": {
+    "basics": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "headline": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "links": { "type": "array", "items": { "type": "string" } },
+        "linkedin_name": { "type": "string" }
+      }
+    },
+    "scoring_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "differentiator": {"type": "string"}, "differentiator_10": {"type": "string"},
+        "differentiator_5": {"type": "string"}, "differentiator_0": {"type": "string"},
+        "current_level": {"type": "string"}, "winnability_note": {"type": "string"},
+        "domain_home": {"type": "string"}, "domain_adjacent": {"type": "string"},
+        "domain_none": {"type": "string"}
+      }
+    },
+    "summary": { "type": "string" },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["company", "title"],
+        "properties": {
+          "company": { "type": "string" },
+          "title": { "type": "string" },
+          "start": { "type": "string" },
+          "end": { "type": "string" },
+          "location": { "type": "string" },
+          "bullets": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "skills": { "type": "array", "items": { "type": "string" } },
+    "education": { "type": "array", "items": { "type": "object" } },
+    "certifications": { "type": "array", "items": { "type": "object" } }
+  }
+}

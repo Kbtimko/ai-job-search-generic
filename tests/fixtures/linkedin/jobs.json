@@ -1,0 +1,6 @@
+[
+  {"id": "nw-dir-analytics", "company": "Northwind Traders",
+   "title": "Director of Analytics", "status": "new"},
+  {"id": "umbrella-1", "company": "Umbrella Biotech",
+   "title": "Head of Data", "status": "new"}
+]

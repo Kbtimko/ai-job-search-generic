@@ -1,0 +1,52 @@
+{
+  "basics": {
+    "name": "Alex Rivera",
+    "linkedin_name": "Alex Rivera",
+    "headline": "Analytics leader - experimentation and pricing",
+    "email": "alex@example.com",
+    "phone": "555.010.0199",
+    "location": "Denver, CO",
+    "links": ["alexrivera.example"]
+  },
+  "summary": "Analytics leader with 10+ years building experimentation and pricing analytics for consumer e-commerce teams.",
+  "scoring_context": {
+    "differentiator": "running pricing experiments end to end on a warehouse-native stack",
+    "differentiator_10": "the posting asks for experimentation platform ownership",
+    "differentiator_5": "a solid analytics role any strong candidate could fill",
+    "differentiator_0": "pure data engineering",
+    "current_level": "Analytics Manager; has managed ICs only",
+    "winnability_note": "A VP posting is rarely above 3.",
+    "domain_home": "e-commerce / retail",
+    "domain_adjacent": "consumer fintech",
+    "domain_none": "defense"
+  },
+  "experience": [
+    {
+      "company": "Lumen Commerce",
+      "title": "Analytics Manager",
+      "start": "2020-03",
+      "end": "Present",
+      "location": "Denver, CO",
+      "bullets": [
+        "Led a team of five analysts running pricing and promotion experiments across the storefront.",
+        "Built a warehouse-native experimentation workflow that cut test setup time from two weeks to two days.",
+        "Partnered with finance to quantify a 4% margin lift from price-test learnings."
+      ]
+    },
+    {
+      "company": "Brightline Data",
+      "title": "Senior Analyst",
+      "start": "2015-06",
+      "end": "2020-02",
+      "location": "Denver, CO",
+      "bullets": [
+        "Owned KPI reporting for a portfolio of retail clients.",
+        "Automated weekly reporting in SQL and Python, saving about 20 analyst hours a week."
+      ]
+    }
+  ],
+  "skills": ["SQL", "Python", "Experimentation", "Pricing analytics", "dbt", "Looker"],
+  "education": [
+    {"school": "State University", "degree": "B.S. Statistics", "year": "2014"}
+  ]
+}

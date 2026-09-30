@@ -1,0 +1,7 @@
+"CONVERSATION ID","CONVERSATION TITLE","FROM","SENDER PROFILE URL","TO","RECIPIENT PROFILE URLS","DATE","SUBJECT","CONTENT","FOLDER","ATTACHMENTS"
+"conv-1","","Ada Nolan","https://www.linkedin.com/in/adanolan","Alex Rivera","https://www.linkedin.com/in/alexrivera","2026-06-01 10:00:00 UTC","","Hi Alex, we have an opening for a Director of Analytics role at Northwind. Interested?","INBOX",""
+"conv-1","","Alex Rivera","https://www.linkedin.com/in/alexrivera","Ada Nolan","https://www.linkedin.com/in/adanolan","2026-06-02 09:00:00 UTC","","Thanks Ada, happy to chat.","INBOX",""
+"conv-2","","Bo Reyes","https://www.linkedin.com/in/boreyes","Alex Rivera","https://www.linkedin.com/in/alexrivera","2019-05-10 12:00:00 UTC","","Congrats on the new role!","INBOX",""
+"conv-3","","Cy Marsh","https://www.linkedin.com/in/cymarsh","Alex Rivera","https://www.linkedin.com/in/alexrivera","2021-08-01 08:00:00 UTC","","","INBOX",""
+"conv-4","","Unknown Sender","","Alex Rivera","https://www.linkedin.com/in/alexrivera","2024-02-02 08:00:00 UTC","","We are hiring a Head of Data at a Series B startup, reaching out to see if you are open.","INBOX",""
+"conv-5","","Alex Rivera","https://www.linkedin.com/in/alexrivera","Dee Okafor","https://www.linkedin.com/in/deeokafor","2025-03-03 08:00:00 UTC","","Hi Dee, would love to reconnect.","INBOX",""

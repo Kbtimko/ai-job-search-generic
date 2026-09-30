@@ -1,0 +1,157 @@
+name: Daily Job Scan
+
+on:
+  schedule:
+    # BACKSTOP ONLY. The real trigger is cron-job.org, which fires a workflow_dispatch
+    # at 07:00 America/New_York -- GitHub's own scheduler runs 4-10h late for free-tier
+    # private repos. See docs/external-cron-trigger.md. This cron stays enabled so that
+    # a dead external trigger degrades to a late scan rather than no scan; the `guard`
+    # job below is what stops both triggers from running the scan twice.
+    # (11:00 UTC is 07:00 ET only during EDT -- it becomes 06:00 EST in November. The
+    # external trigger schedules in a named timezone and does not drift.)
+    - cron: "0 11 * * *"
+  workflow_dispatch:        # manual run button (for verification / on-demand)
+    inputs:
+      model:
+        description: "JOBSEARCH_MODEL"
+        default: "claude-sonnet-4-6"
+      effort:
+        description: "JOBSEARCH_EFFORT (low/high)"
+        default: "low"
+      max_tokens:
+        description: "JOBSEARCH_MAX_TOKENS (output cap per call; truncation guard, not a cost cap)"
+        default: "16000"
+      max_continuations:
+        description: "JOBSEARCH_MAX_CONTINUATIONS (pause_turn rounds; raise for heavy runs)"
+        default: "2"
+      max_web_searches:
+        description: "JOBSEARCH_MAX_WEB_SEARCHES (HARD cap; each ~$0.01)"
+        default: "18"
+      force:
+        description: "Run even if a scan already succeeded today (bypasses the guard)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write           # to commit updated data/jobs.json
+  actions: read             # the guard job reads this workflow's own run history
+
+concurrency:
+  group: daily-scan
+  cancel-in-progress: false
+
+jobs:
+  # The scan is triggered twice on purpose. cron-job.org fires a workflow_dispatch at
+  # 07:00 America/New_York because GitHub's own scheduler runs hours late for free-tier
+  # private repos (4-10h every day from 2026-08-27), and the `schedule:` cron above
+  # stays on as a backstop for when that external trigger fails. Since
+  # `cancel-in-progress` is false a same-day second trigger QUEUES rather than being
+  # dropped, so without this guard both would run in full: two digest emails and twice
+  # the Anthropic bill (~$1.40 rather than ~$0.70). The guard admits the first success
+  # of each UTC day and skips the rest. UTC is the right window because both triggers
+  # land at 11:00-12:00 UTC and the observed delays stay inside the same UTC day.
+  #
+  # The guard is also the "is this repo set up?" gate. The job-level `if:` skips the whole
+  # workflow (guard, then scan) until JOBSEARCH_EMAIL_TO is set, and the first check below
+  # stops it when there is no ANTHROPIC_API_KEY (secrets are not usable in `if:`, so the
+  # step reads it through the env). A fresh fork or the public template therefore shows a
+  # skipped run instead of a red one every morning. Neither check touches the double-run
+  # logic, and workflow_dispatch still works once both are configured.
+  guard:
+    if: ${{ vars.JOBSEARCH_EMAIL_TO != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        # Values reach the shell as quoted env vars, never `${{ }}` interpolation, so
+        # nothing here can inject shell -- same rule the commit step below follows.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+          REPO: ${{ github.repository }}
+          HAVE_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        run: |
+          if [[ "$HAVE_KEY" != "true" ]]; then
+            echo "::notice::ANTHROPIC_API_KEY is not set - skipping the scan (see SETUP.md)."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$FORCE" == "true" ]]; then
+            echo "force=true - running regardless of what already ran today."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          today="$(date -u +%F)"
+          # This run is still in progress, so its own conclusion is null and cannot
+          # match. A run the guard skipped also concludes "success", but a skip requires
+          # an earlier success that same day, so a skip can never be the day's first run.
+          already="$(gh run list --repo "$REPO" --workflow=daily-scan.yml --limit 50 \
+            --json createdAt,conclusion \
+            --jq "[.[] | select(.conclusion == \"success\" and (.createdAt | startswith(\"$today\")))] | length")"
+          if [[ "$already" -gt 0 ]]; then
+            echo "A scan already succeeded on $today (UTC) - skipping this duplicate trigger."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "No successful scan yet on $today (UTC) - proceeding."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  scan:
+    needs: guard
+    if: ${{ needs.guard.outputs.should_run == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      JOBSEARCH_EMAIL_TO: ${{ vars.JOBSEARCH_EMAIL_TO }}
+      JOBSEARCH_EMAIL_FROM: ${{ vars.JOBSEARCH_EMAIL_FROM }}
+      # Cost controls. On schedule, inputs.* is empty so the `|| 'default'` fallback
+      # supplies the same values scan.py defaults to (Sonnet / low / 16000 / 2 / 12) —
+      # scheduled-run behavior is unchanged. On a manual run, the workflow_dispatch
+      # inputs above let you raise the budget for a heavy/verification run (e.g.
+      # max_continuations=8, max_tokens=32000) without editing this file.
+      # max_web_searches is a HARD cap (web_search tool max_uses): each query is a
+      # ~$0.01 server-tool fee, and the model overran the prompt's "~8" to 14 live.
+      JOBSEARCH_MODEL: ${{ inputs.model || 'claude-sonnet-4-6' }}
+      JOBSEARCH_EFFORT: ${{ inputs.effort || 'low' }}
+      JOBSEARCH_MAX_TOKENS: ${{ inputs.max_tokens || '16000' }}
+      JOBSEARCH_MAX_CONTINUATIONS: ${{ inputs.max_continuations || '2' }}
+      JOBSEARCH_MAX_WEB_SEARCHES: ${{ inputs.max_web_searches || '18' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run scan
+        run: PYTHONPATH=. python scripts/scan.py
+      # The commit below rebases onto origin/main and pushes to the current ref, which
+      # only makes sense on main. On a branch dispatch (used to verify a change against
+      # the live API before merging) the rebase conflicts and the job goes red even
+      # though the scan itself succeeded and emailed its digest — so skip it there and
+      # say so, rather than failing a good run. Read via the quoted GITHUB_REF_NAME env
+      # var, never `${{ }}` interpolation, so a crafted ref name cannot inject shell.
+      - name: Commit updated job history
+        run: |
+          if [[ "$GITHUB_REF_NAME" != "main" ]]; then
+            echo "On '$GITHUB_REF_NAME', not main — skipping the data commit."
+            echo "The scan ran and emailed its digest; data/jobs.json is not persisted"
+            echo "from a branch dispatch. Merge to main for the scheduled run to store it."
+            exit 0
+          fi
+          if [[ -n "$(git status --porcelain data/jobs.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/jobs.json
+            git commit -m "chore: daily scan results [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push && exit 0
+              echo "push attempt $i failed, retrying..." >&2
+              sleep 5
+            done
+            echo "push failed after 3 retries" >&2; exit 1
+          else
+            echo "No new jobs to commit."
+          fi

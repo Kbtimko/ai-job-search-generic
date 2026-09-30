@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "jobs",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": true,
+    "required": ["id", "title", "company", "location_type", "url", "found_date", "status"],
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "title": { "type": "string", "minLength": 1 },
+      "company": { "type": "string", "minLength": 1 },
+      "location": { "type": "string" },
+      "location_type": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+      "url": { "type": "string", "minLength": 1 },
+      "source": { "type": "string" },
+      "found_date": { "type": "string", "format": "date" },
+      "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+      "score_reasons": { "type": "array", "items": { "type": "string" } },
+      "status": { "type": "string", "enum": ["new", "interested", "applied", "closed", "dismissed"] },
+      "posting_checked_date": { "type": "string", "format": "date" },
+      "description_excerpt": { "type": "string" },
+      "salary_min": { "type": ["number", "null"] },
+      "salary_max": { "type": ["number", "null"] },
+      "salary_raw": { "type": ["string", "null"] },
+      "score_breakdown": {
+        "type": "object",
+        "comment": "differentiation + winnability are model-judged; comp + location are computed deterministically from salary_max and location_type. Legacy rows may carry the old seniority/skills keys (allowed via additionalProperties).",
+        "properties": {
+          "differentiation": { "type": "number", "minimum": 0, "maximum": 10 },
+          "winnability": { "type": "number", "minimum": 0, "maximum": 10 },
+          "comp": { "type": "number", "minimum": 0, "maximum": 10 },
+          "location": { "type": "number", "minimum": 0, "maximum": 10 },
+          "domain": { "type": "number", "minimum": 0, "maximum": 10 }
+        }
+      },
+      "strengths": { "type": "array", "items": { "type": "string" } },
+      "gaps": { "type": "array", "items": { "type": "string" } }
+    }
+  }
+}

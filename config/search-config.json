@@ -1,0 +1,40 @@
+{
+  "_comment": "Starter config. Run /setup search in Claude Code to replace every value here with your own.",
+  "titles": ["Director of Analytics", "Head of Analytics", "Analytics Manager"],
+  "title_tiers": {
+    "_comment": "Multiplier applied to the winnability dimension. Tier 1 = you are an obvious shortlist. Tier 3 = reach.",
+    "tier1": {"multiplier": 1.0, "titles": ["Analytics Manager"]},
+    "tier2": {"multiplier": 0.85, "titles": ["Director of Analytics"]},
+    "tier3": {"multiplier": 0.6, "titles": ["Head of Analytics"]}
+  },
+  "exclude_titles": ["Software Engineer", "Data Scientist", "Product Manager"],
+  "signal_keywords": {
+    "_comment": "differentiation = the rare terms that set you apart; core = must-have skills; shape = the kind of role you want.",
+    "differentiation": ["experimentation platform"],
+    "core": ["SQL", "Python"],
+    "shape": ["player-coach"]
+  },
+  "negative_keywords": {
+    "_comment": "A hard match forces a hard exclusion (winnability is zeroed). Each soft match subtracts 1 from differentiation and winnability. Terms match whole words only.",
+    "hard": ["unpaid", "internship"],
+    "soft": ["on-site 5 days"]
+  },
+  "locations": [
+    {"key": "remote", "label": "Remote", "match": "US-remote", "score": 10}
+  ],
+  "seniority": ["manager", "director", "head", "lead"],
+  "dealbreakers": ["unpaid", "internship"],
+  "salary_floor": 0,
+  "salary_null_policy": "flag",
+  "comp_score_bands": [
+    {"min": 200000, "score": 10}, {"min": 160000, "score": 7},
+    {"min": 120000, "score": 4}, {"min": 0, "score": 0}
+  ],
+  "comp_score_when_null": 5,
+  "score_weights": {"differentiation": 0.3, "winnability": 0.25, "comp": 0.2, "location": 0.15, "domain": 0.1},
+  "companies_watch": [],
+  "manual_feeds": [
+    {"label": "BuiltIn - remote data & analytics", "location_type": "remote",
+     "url": "https://builtin.com/jobs/remote/data-analytics"}
+  ]
+}

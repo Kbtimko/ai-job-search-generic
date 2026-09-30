@@ -1,0 +1,56 @@
+name: Daily Pipeline Scan
+
+on:
+  schedule:
+    # BACKSTOP ONLY -- the real trigger is cron-job.org at 07:20 America/New_York.
+    # See docs/external-cron-trigger.md. No guard job here: this scan is deterministic,
+    # makes no API calls, costs $0, and a duplicate same-day run just finds nothing new.
+    - cron: "20 11 * * *"   # 7:20 AM America/New_York (after the job scan)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write           # to commit applications.json + pipeline-state.json
+
+concurrency:
+  group: pipeline-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    # Skip (not fail) until a recipient is configured, so a fresh fork or the public
+    # template does not fire a red run every morning. See SETUP.md.
+    if: ${{ vars.JOBSEARCH_EMAIL_TO != '' }}
+    runs-on: ubuntu-latest
+    env:
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      JOBSEARCH_EMAIL_TO: ${{ vars.JOBSEARCH_EMAIL_TO }}
+      JOBSEARCH_EMAIL_FROM: ${{ vars.JOBSEARCH_EMAIL_FROM }}
+      # Deterministic scan — NO ANTHROPIC_API_KEY, no LLM, $0 recurring cost.
+      # Optional overrides:
+      # JOBSEARCH_STALL_DAYS: "14"
+      # JOBSEARCH_PIPELINE_LOOKBACK_DAYS: "30"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run pipeline scan
+        run: PYTHONPATH=. python scripts/pipeline_scan.py
+      - name: Commit pipeline updates
+        run: |
+          if [[ -n "$(git status --porcelain data/applications.json data/pipeline-state.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/applications.json data/pipeline-state.json
+            git commit -m "chore: daily pipeline scan [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push && exit 0
+              echo "push attempt $i failed, retrying..." >&2
+              sleep 5
+            done
+            echo "push failed after 3 retries" >&2; exit 1
+          else
+            echo "No pipeline changes to commit."
+          fi

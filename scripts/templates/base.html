@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Application Tracker</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #1a1a1a; }
+    header { background: #fff; border-bottom: 1px solid #e2e4e8; padding: 12px 20px; display: flex; gap: 16px; align-items: center; }
+    header a { text-decoration: none; color: #444; font-weight: 600; padding: 6px 10px; border-radius: 6px; }
+    header a.active { background: #eef; color: #224; }
+    .flash { background: #fff4d6; border: 1px solid #ecd28a; padding: 8px 20px; }
+    main { padding: 20px; }
+    .board { display: flex; gap: 14px; overflow-x: auto; align-items: flex-start; }
+    .col { background: #eceef1; border-radius: 10px; padding: 10px; min-width: 200px; }
+    .col h3 { margin: 4px 6px 10px; font-size: 13px; text-transform: uppercase; color: #667; }
+    .card { background: #fff; border: 1px solid #e2e4e8; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+    .card h4 { margin: 0 0 4px; font-size: 14px; }
+    .card .meta { font-size: 12px; color: #778; }
+    .badge { display: inline-block; font-size: 11px; background: #eef; border-radius: 4px; padding: 1px 6px; margin-top: 6px; }
+    form.inline { display: inline; }
+    button { font-size: 12px; padding: 4px 8px; border: 1px solid #ccd; background: #fff; border-radius: 6px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="{{ url_for('board') }}" class="{{ 'active' if request.endpoint == 'board' else '' }}">Pipeline</a>
+    <a href="{{ url_for('jobs') if 'jobs' in current_app.view_functions else '#' }}"
+       class="{{ 'active' if request.endpoint == 'jobs' else '' }}">Jobs</a>
+  </header>
+  {% with messages = get_flashed_messages() %}
+    {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

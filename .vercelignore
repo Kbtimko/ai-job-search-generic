@@ -1,0 +1,12 @@
+# Keep personal data off Vercel. `vercel --prod` uploads from this checkout, and
+# Vercel's default ignore list does not include gitignored paths. The deployed
+# tracker reads its stores from GitHub (STORE_BACKEND=github) and needs none of these.
+data/linkedin_archive/
+output/
+/profile/*
+# vercel.json includeFiles bundles this for scoring.
+!/profile/master.json
+# Worktrees under .claude/ carry their own copies of the paths above, and browser
+# snapshots in .playwright-mcp/ can contain names rendered on the Jobs tab.
+.claude/
+.playwright-mcp/

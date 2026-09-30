@@ -1,0 +1,24 @@
+# Vercel deploy manifest. Vercel's Python build runs `uv lock` against this file, so it
+# needs a [project] table. `package = false` marks it a non-installable ("virtual")
+# project, so uv only resolves the runtime deps below and does NOT try to build the repo
+# as a wheel. `entrypoint` points the runtime at the Flask WSGI app (built by a factory,
+# so it can't be auto-detected). requirements.txt remains the source for LOCAL dev/tests
+# (it also carries pytest / python-docx that the deployed tracker doesn't need).
+# anthropic IS needed at runtime: the tracker scores manually-added jobs via the API.
+[project]
+name = "ai-job-search-tracker"
+version = "0.0.0"
+requires-python = ">=3.9"
+dependencies = [
+    "Flask>=3.0",
+    "Authlib>=1.3",
+    "requests>=2.31",
+    "jsonschema==4.23.0",
+    "anthropic==0.112.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.vercel]
+entrypoint = "api.index:app"

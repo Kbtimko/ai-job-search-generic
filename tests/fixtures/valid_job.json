@@ -1,0 +1,14 @@
+{
+  "id": "acme-senior-analyst-2026-06",
+  "title": "Senior Data Analyst",
+  "company": "Acme",
+  "location": "Remote (US)",
+  "location_type": "remote",
+  "url": "https://boards.greenhouse.io/acme/jobs/123",
+  "source": "greenhouse",
+  "found_date": "2026-06-28",
+  "score": 82,
+  "score_reasons": ["SQL + Python match", "remote"],
+  "status": "new",
+  "description_excerpt": "Own analytics for ..."
+}

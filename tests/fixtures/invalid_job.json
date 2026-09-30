@@ -1,0 +1,8 @@
+{
+  "id": "broken",
+  "company": "Acme",
+  "location_type": "remote",
+  "url": "https://example.com/1",
+  "found_date": "2026-06-28",
+  "status": "totally-not-valid"
+}

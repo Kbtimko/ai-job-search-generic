@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block content %}
+<details style="margin-bottom:16px">
+  <summary style="cursor:pointer; font-weight:600">＋ Add job manually</summary>
+  <form method="post" action="{{ url_for('jobs_add') }}"
+        style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; align-items:center">
+    <input name="company" placeholder="Company" required>
+    <input name="title" placeholder="Title" required>
+    <input name="url" placeholder="URL" required style="min-width:220px">
+    <select name="location_type">
+      {%- for loc in locations %}
+      <option value="{{ loc.key }}">{{ loc.key }}</option>
+      {%- endfor %}
+    </select>
+    <select name="status">
+      <option value="interested">interested</option>
+      <option value="new">new</option>
+    </select>
+    <label style="display:flex; gap:4px; align-items:center">
+      <input type="checkbox" name="start" value="1" checked> Also start an application
+    </label>
+    <textarea name="description" placeholder="Paste the job description to auto-score this role (optional)"
+              rows="3" style="width:100%; flex-basis:100%"></textarea>
+    <button type="submit">Add job</button>
+  </form>
+</details>
+
+<div id="filters" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+  <input id="f-search" type="search" placeholder="Search company or title…" style="min-width:200px">
+  <label>Status
+    <select id="f-status">
+      <option value="considering" selected>Considering</option>
+      <option value="eliminated">Eliminated</option>
+      <option value="all">All</option>
+    </select>
+  </label>
+  <label>Location
+    <select id="f-location">
+      <option value="all" selected>All</option>
+      {%- for loc in locations %}
+      <option value="{{ loc.key }}">{{ loc.key }}</option>
+      {%- endfor %}
+    </select>
+  </label>
+  <label>Min score
+    <input id="f-score" type="number" min="0" max="100" style="width:70px">
+  </label>
+  <span id="f-count" style="color:#889"></span>
+</div>
+
+<table id="jobs-table">
+  <thead>
+    <tr>
+      <th data-key="score">Score</th>
+      <th data-key="company">Company</th>
+      <th data-key="title">Title</th>
+      <th data-key="date">Added</th>
+      <th data-key="location">Location</th>
+      <th data-key="status">Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for job in jobs %}
+    {% set bucket = 'considering' if job.status in open_statuses else 'eliminated' %}
+    <tr data-bucket="{{ bucket }}"
+        data-status="{{ job.status }}"
+        data-score="{{ job.score if job.score is not none else -1 }}"
+        data-company="{{ (job.company or '')|lower }}"
+        data-title="{{ (job.title or '')|lower }}"
+        data-date="{{ job.found_date or '' }}"
+        data-location="{{ job.location_type or '' }}">
+      <td>{{ job.score if job.score is not none else '—' }}</td>
+      <td>{{ job.company }}
+        {% set wp = warm.get(job.id) %}
+        {% if wp %}
+        <details class="warm-path" style="white-space:normal; margin-top:4px">
+          <summary style="cursor:pointer; color:#88a">🤝 {{ wp.count }}</summary>
+          <div style="font-size:0.9em; margin-top:4px; max-width:360px">
+            {% for t in wp.top %}
+            <div>
+              {%- if t.profile_url %}<a href="{{ t.profile_url }}" target="_blank" rel="noopener">{{ t.name }}</a>{% else %}{{ t.name }}{% endif -%}
+              {% if t.title %} · {{ t.title }}{% endif %} · {{ t.recency }}
+              {%- if t.former_colleague %} · ★ former colleague{% endif %}
+            </div>
+            {% endfor %}
+            <div style="color:#889; margin-top:3px">From your LinkedIn export (loaded {{ wp.archive_date }}). Employer is self-reported and may be stale; former colleague is inferred.</div>
+          </div>
+        </details>
+        {% endif %}
+      </td>
+      <td>{% if job.url %}<a href="{{ job.url }}" target="_blank" rel="noopener">{{ job.title }}</a>{% else %}{{ job.title }}{% endif %}</td>
+      <td>{{ job.found_date or '—' }}</td>
+      <td>{{ job.location_type or '—' }}</td>
+      <td>{{ job.status }}</td>
+      <td style="white-space:nowrap">
+        {% if bucket == 'considering' %}
+        <form class="inline" method="post" action="{{ url_for('jobs_start') }}">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          <button type="submit">Start application</button>
+        </form>
+        <form class="inline" method="post" action="{{ url_for('jobs_dismiss') }}">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          <input type="hidden" name="reason" value="not_fit">
+          <button type="submit">Not a fit</button>
+        </form>
+        <form class="inline" method="post" action="{{ url_for('jobs_dismiss') }}">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          <input type="hidden" name="reason" value="closed">
+          <button type="submit">Closed</button>
+        </form>
+        {% else %}
+        <form class="inline" method="post" action="{{ url_for('jobs_restore') }}">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          <button type="submit">Reopen</button>
+        </form>
+        {% endif %}
+        {% if job.score_breakdown or job.strengths or job.gaps or job.score_reasons %}
+        <details class="score-why" style="white-space:normal; margin-top:4px">
+          <summary style="cursor:pointer; color:#88a">why{% if job.score is not none %} {{ job.score }}{% endif %}?</summary>
+          <div style="font-size:0.9em; margin-top:4px; max-width:360px">
+            {% if job.score_breakdown %}
+            <div style="color:#667; margin-bottom:3px">
+              {%- for dim in ['differentiation','winnability','domain','comp','location'] -%}
+                {%- if dim in job.score_breakdown %}{{ dim }} {{ job.score_breakdown[dim] }}/10{% if not loop.last %} · {% endif %}{% endif -%}
+              {%- endfor -%}
+            </div>
+            {% endif %}
+            {% for s in job.strengths or [] %}<div style="color:#3a7">✓ {{ s }}</div>{% endfor %}
+            {% for g in job.gaps or [] %}<div style="color:#c55">✗ {{ g }}</div>{% endfor %}
+            {% for r in job.score_reasons or [] %}<div style="color:#778">· {{ r }}</div>{% endfor %}
+          </div>
+        </details>
+        {% endif %}
+        <details style="white-space:normal; margin-top:4px">
+          <summary style="cursor:pointer; color:#4a6">✎ description</summary>
+          <form method="post" action="{{ url_for('jobs_rescore') }}" style="margin-top:6px">
+            <input type="hidden" name="job_id" value="{{ job.id }}">
+            <textarea name="description" rows="4" style="width:100%; min-width:320px"
+                      placeholder="Paste or edit the job description, then Save &amp; rescore">{{ job.description_excerpt or '' }}</textarea>
+            <button type="submit">Save &amp; rescore</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+(function () {
+  var table = document.getElementById('jobs-table');
+  var tbody = table.tBodies[0];
+  var rows = Array.prototype.slice.call(tbody.rows);
+  var search = document.getElementById('f-search');
+  var fStatus = document.getElementById('f-status');
+  var fLocation = document.getElementById('f-location');
+  var fScore = document.getElementById('f-score');
+  var count = document.getElementById('f-count');
+  var sortState = {key: null, dir: 1};
+
+  // Show how many jobs sit in each bucket so eliminated/closed jobs (and their Reopen
+  // button) are discoverable even though the default view is "Considering".
+  (function labelStatusCounts() {
+    var considering = 0, eliminated = 0;
+    rows.forEach(function (r) {
+      if (r.dataset.bucket === 'considering') considering++; else eliminated++;
+    });
+    Array.prototype.forEach.call(fStatus.options, function (o) {
+      if (o.value === 'considering') o.text = 'Considering (' + considering + ')';
+      else if (o.value === 'eliminated') o.text = 'Eliminated (' + eliminated + ')';
+      else if (o.value === 'all') o.text = 'All (' + (considering + eliminated) + ')';
+    });
+  })();
+
+  function applyFilters() {
+    var q = search.value.trim().toLowerCase();
+    var status = fStatus.value;
+    var loc = fLocation.value;
+    var minScore = fScore.value === '' ? null : Number(fScore.value);
+    var shown = 0;
+    rows.forEach(function (row) {
+      var d = row.dataset;
+      var ok = true;
+      if (status !== 'all' && d.bucket !== status) ok = false;
+      if (ok && loc !== 'all' && d.location !== loc) ok = false;
+      if (ok && minScore !== null && Number(d.score) < minScore) ok = false;
+      if (ok && q && d.company.indexOf(q) === -1 && d.title.indexOf(q) === -1) ok = false;
+      row.hidden = !ok;
+      if (ok) shown++;
+    });
+    count.textContent = shown + ' shown';
+  }
+
+  function sortBy(key) {
+    var dir;
+    if (sortState.key === key) {
+      dir = -sortState.dir;                 // same column → flip direction
+    } else {
+      dir = (key === 'score') ? -1 : 1;     // score defaults high→low, others A→Z
+    }
+    sortState = {key: key, dir: dir};
+    var numeric = (key === 'score');
+    rows.slice().sort(function (a, b) {
+      var av = a.dataset[key], bv = b.dataset[key];
+      if (numeric) { return (Number(av) - Number(bv)) * dir; }
+      return av < bv ? -dir : (av > bv ? dir : 0);
+    }).forEach(function (row) { tbody.appendChild(row); });
+    Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th) {
+      if (!th.dataset.key) return;
+      var base = th.textContent.replace(/[ ▲▼]+$/, '');
+      th.textContent = (th.dataset.key === key) ? base + (dir > 0 ? ' ▲' : ' ▼') : base;
+    });
+  }
+
+  Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th) {
+    if (!th.dataset.key) return;
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', function () { sortBy(th.dataset.key); });
+  });
+  search.addEventListener('input', applyFilters);
+  fStatus.addEventListener('change', applyFilters);
+  fLocation.addEventListener('change', applyFilters);
+  fScore.addEventListener('input', applyFilters);
+  applyFilters();   // default view = Considering
+})();
+</script>
+{% endblock %}
